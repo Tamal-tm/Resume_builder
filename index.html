@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Resume Builder</title>
+    <style>
+        /* General Styling */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            padding: 40px;
+        }
+
+        form, #resumePreview {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 45%;
+            box-sizing: border-box;
+            transition: all 0.5s ease-in-out;
+        }
+
+        form {
+            max-width: 500px;
+        }
+
+        /* Form Styles */
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        input, textarea, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+        }
+
+        input:focus, textarea:focus {
+            border-color: #333;
+        }
+
+        button {
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        button[type="reset"] {
+            background-color: #dc3545;
+        }
+
+        button[type="reset"]:hover {
+            background-color: #c82333;
+        }
+
+        /* Resume Preview Section */
+        #resumePreview {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        #resumePreview.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #resumePreview h2 {
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        #resumePreview p, #resumePreview ul {
+            margin-bottom: 15px;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        #resumePreview ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        #resumePreview ul li {
+            padding-left: 10px;
+            position: relative;
+        }
+
+        #resumePreview ul li:before {
+            content: "•";
+            color: #28a745;
+            position: absolute;
+            left: 0;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            form, #resumePreview {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+
+            #resumePreview {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Form Section -->
+    <form id="resumeForm">
+        <h2>Build Your Resume</h2>
+
+        <label for="name">Full Name:</label>
+        <input type="text" id="name" name="name" placeholder="Enter your name" oninput="updatePreview()">
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" placeholder="Enter your email" oninput="updatePreview()">
+
+        <label for="phone">Phone Number:</label>
+        <input type="tel" id="phone" name="phone" placeholder="Enter your phone number" oninput="updatePreview()">
+
+        <label for="profile">Profile Summary:</label>
+        <textarea id="profile" name="profile" rows="4" placeholder="Write a brief profile summary" oninput="updatePreview()"></textarea>
+
+        <label for="education">Education:</label>
+        <div id="educationSection"></div>
+        <button type="button" onclick="addEducation()">Add Education</button>
+
+        <label for="skills">Skills:</label>
+        <input type="checkbox" name="skills" value="HTML" onchange="updatePreview()"> HTML
+        <input type="checkbox" name="skills" value="CSS" onchange="updatePreview()"> CSS
+        <input type="checkbox" name="skills" value="JavaScript" onchange="updatePreview()"> JavaScript
+
+        <label for="experience">Experience:</label>
+        <div id="experienceSection"></div>
+        <button type="button" onclick="addExperience()">Add Experience</button>
+
+        <button type="reset" onclick="clearPreview()">Clear</button>
+    </form>
+
+    <!-- Resume Preview Section -->
+    <div id="resumePreview">
+        <h2 id="previewName">Your Name</h2>
+        <p id="previewEmail"></p>
+        <p id="previewPhone"></p>
+        <h3>Profile Summary</h3>
+        <p id="previewProfile"></p>
+
+        <h3>Education</h3>
+        <ul id="previewEducation"></ul>
+
+        <h3>Skills</h3>
+        <ul id="previewSkills"></ul>
+
+        <h3>Experience</h3>
+        <ul id="previewExperience"></ul>
+        
+        <!-- Button to Download Resume as PDF -->
+        <button onclick="downloadPDF()">Download as PDF</button>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+    const { jsPDF } = window.jspdf;
+
+    // JavaScript to handle dynamic updates and form functionality
+
+    // Update resume preview in real-time
+    function updatePreview() {
+        document.getElementById('previewName').textContent = document.getElementById('name').value || "Your Name";
+        document.getElementById('previewEmail').textContent = document.getElementById('email').value;
+        document.getElementById('previewPhone').textContent = document.getElementById('phone').value;
+        document.getElementById('previewProfile').textContent = document.getElementById('profile').value;
+
+        // Handle skills
+        let skills = document.querySelectorAll('input[name="skills"]:checked');
+        let skillList = "";
+        skills.forEach((skill) => skillList += `<li>${skill.value}</li>`);
+        document.getElementById('previewSkills').innerHTML = skillList;
+
+        // Show the resume preview with animation
+        document.getElementById('resumePreview').classList.add('show');
+    }
+
+    // Add dynamic education fields
+    function addEducation() {
+        let div = document.createElement('div');
+        div.innerHTML = `<input type="text" name="education" oninput="updateEducation()" placeholder="Enter education details">`;
+        document.getElementById('educationSection').appendChild(div);
+    }
+
+    function updateEducation() {
+        let educationInputs = document.querySelectorAll('input[name="education"]');
+        let educationList = "";
+        educationInputs.forEach((input) => educationList += `<li>${input.value}</li>`);
+        document.getElementById('previewEducation').innerHTML = educationList;
+    }
+
+    // Add dynamic experience fields
+    function addExperience() {
+        let div = document.createElement('div');
+        div.innerHTML = `<input type="text" name="experience" oninput="updateExperience()" placeholder="Enter experience details">`;
+        document.getElementById('experienceSection').appendChild(div);
+    }
+
+    function updateExperience() {
+        let experienceInputs = document.querySelectorAll('input[name="experience"]');
+        let experienceList = "";
+        experienceInputs.forEach((input) => experienceList += `<li>${input.value}</li>`);
+        document.getElementById('previewExperience').innerHTML = experienceList;
+    }
+
+    // Clear the form and preview
+    function clearPreview() {
+        document.getElementById('previewName').textContent = "Your Name";
+        document.getElementById('previewEmail').textContent = "";
+        document.getElementById('previewPhone').textContent = "";
+        document.getElementById('previewProfile').textContent = "";
+        document.getElementById('previewEducation').innerHTML = "";
+        document.getElementById('previewSkills').innerHTML = "";
+        document.getElementById('previewExperience').innerHTML = "";
+        document.getElementById('resumePreview').classList.remove('show');
+    }
+
+    // Download the resume as PDF
+    function downloadPDF() {
+        const doc = new jsPDF();
+        doc.text(`Name: ${document.getElementById('previewName').textContent}`, 10, 10);
+        doc.text(`Email: ${document.getElementById('previewEmail').textContent}`, 10, 20);
+        doc.text(`Phone: ${document.getElementById('previewPhone').textContent}`, 10, 30);
+        doc.text(`Profile Summary: ${document.getElementById('previewProfile').textContent}`, 10, 40);
+
+        // Add education details
+        let educationItems = document.querySelectorAll('#previewEducation li');
+        let eduText = 'Education:';
+        educationItems.forEach((item) => eduText += `\n- ${item.textContent}`);
+        doc.text(eduText, 10, 50);
+
+        // Add skills
+        let skillItems = document.querySelectorAll('#previewSkills li');
+        let skillsText = 'Skills:';
+        skillItems.forEach((item) => skillsText += `\n- ${item.textContent}`);
+        doc.text(skillsText, 10, 70);
+
+        // Add experience
+        let experienceItems = document.querySelectorAll('#previewExperience li');
+        let expText = 'Experience:';
+        experienceItems.forEach((item) => expText += `\n- ${item.textContent}`);
+        doc.text(expText, 10, 90);
+
+        doc.save("resume.pdf");
+    }
+</script>
+</body>
+</html>
